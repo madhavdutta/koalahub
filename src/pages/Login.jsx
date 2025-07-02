@@ -34,7 +34,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Hero */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative z-10 flex flex-col justify-center px-12 text-white">
           <div className="mb-8">
@@ -44,31 +44,31 @@ const Login = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">Course Builder</h1>
-                <p className="text-blue-100">Premium Learning Platform</p>
+                <p className="text-green-100">Premium Learning Platform</p>
               </div>
             </div>
             <h2 className="text-4xl font-bold mb-4 leading-tight">
               Welcome back to your
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-emerald-300">
                 learning journey
               </span>
             </h2>
-            <p className="text-xl text-blue-100 leading-relaxed">
+            <p className="text-xl text-green-100 leading-relaxed">
               Continue building amazing courses and sharing knowledge with the world.
             </p>
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center space-x-3 text-blue-100">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+            <div className="flex items-center space-x-3 text-green-100">
+              <div className="w-2 h-2 bg-green-300 rounded-full"></div>
               <span>Create unlimited courses</span>
             </div>
-            <div className="flex items-center space-x-3 text-blue-100">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+            <div className="flex items-center space-x-3 text-green-100">
+              <div className="w-2 h-2 bg-green-300 rounded-full"></div>
               <span>Share with unique links</span>
             </div>
-            <div className="flex items-center space-x-3 text-blue-100">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+            <div className="flex items-center space-x-3 text-green-100">
+              <div className="w-2 h-2 bg-green-300 rounded-full"></div>
               <span>Track student progress</span>
             </div>
           </div>
@@ -76,16 +76,16 @@ const Login = () => {
         
         {/* Decorative elements */}
         <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 left-20 w-24 h-24 bg-yellow-400/20 rounded-full blur-lg"></div>
+        <div className="absolute bottom-20 left-20 w-24 h-24 bg-green-400/20 rounded-full blur-lg"></div>
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 bg-white/80 backdrop-blur-sm">
+      <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16 bg-white">
         <div className="w-full max-w-md mx-auto">
           {/* Mobile Header */}
           <div className="lg:hidden mb-8 text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl">
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-xl font-bold gradient-text">Course Builder</h1>
@@ -98,7 +98,7 @@ const Login = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-xl flex items-center space-x-3">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
               <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
               <p className="text-red-700 text-sm">{error}</p>
             </div>
@@ -153,7 +153,7 @@ const Login = () => {
                 <input
                   id="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-slate-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700">
                   Remember me
@@ -161,7 +161,7 @@ const Login = () => {
               </div>
               <Link
                 to="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
               >
                 Forgot password?
               </Link>
@@ -186,7 +186,7 @@ const Login = () => {
           <div className="mt-8 text-center">
             <p className="text-slate-600">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link to="/signup" className="text-emerald-600 hover:text-emerald-700 font-medium">
                 Sign up for free
               </Link>
             </p>
