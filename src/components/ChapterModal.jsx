@@ -1,27 +1,48 @@
-import React, { useState } from 'react'
-import { X, Upload } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, Save } from 'lucide-react'
 import { useCourses } from '../context/CourseContext'
 
 const ChapterModal = ({ courseId, sectionId, chapter, onClose, onSuccess }) => {
   const { addChapter, updateChapter } = useCourses()
   const [formData, setFormData] = useState({
-    title: chapter?.title || '',
-    description: chapter?.description || '',
-    videoUrl: chapter?.videoUrl || '',
-    content: chapter?.content || ''
+    title: '',
+    description: '',
+    video_url: '',
+    content: ''
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    
+  useEffect(() => {
     if (chapter) {
-      updateChapter(courseId, sectionId, chapter.id, formData)
-    } else {
-      addChapter(courseId, sectionId, formData)
+      setFormData({
+        title: chapter.title || '',
+        description: chapter.description || '',
+        video_url: chapter.video_url || '',
+        content: chapter.content || ''
+      })
     }
-    
-    onSuccess()
-    onClose()
+  }, [chapter])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      if (chapter) {
+        await updateChapter(courseId, sectionId, chapter.id, formData)
+      } else {
+        await addChapter(courseId, sectionId, formData)
+      }
+      onSuccess()
+      onClose()
+    } catch (err) {
+      console.error('Error saving chapter:', err)
+      setError('Failed to save chapter. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -31,40 +52,31 @@ const ChapterModal = ({ courseId, sectionId, chapter, onClose, onSuccess }) => {
     }))
   }
 
-  const isYouTubeUrl = (url) => {
-    return url.includes('youtube.com') || url.includes('youtu.be')
-  }
-
-  const getYouTubeEmbedUrl = (url) => {
-    if (url.includes('youtube.com/watch?v=')) {
-      const videoId = url.split('v=')[1].split('&')[0]
-      return `https://www.youtube.com/embed/${videoId}`
-    } else if (url.includes('youtu.be/')) {
-      const videoId = url.split('youtu.be/')[1].split('?')[0]
-      return `https://www.youtube.com/embed/${videoId}`
-    }
-    return url
-  }
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-semibold text-gray-900">
             {chapter ? 'Edit Chapter' : 'Add New Chapter'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 p-1"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Chapter Title
+              Chapter Title *
             </label>
             <input
               type="text"
@@ -79,15 +91,15 @@ const ChapterModal = ({ courseId, sectionId, chapter, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description (Optional)
+              Description
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
               className="textarea"
-              rows="2"
-              placeholder="Brief description of this chapter"
+              rows="3"
+              placeholder="Enter chapter description (optional)"
             />
           </div>
 
@@ -97,53 +109,17 @@ const ChapterModal = ({ courseId, sectionId, chapter, onClose, onSuccess }) => {
             </label>
             <input
               type="url"
-              name="videoUrl"
-              value={formData.videoUrl}
+              name="video_url"
+              value={formData.video_url}
               onChange={handleChange}
               className="input"
-              placeholder="https://youtube.com/watch?v=... or direct video URL"
+              placeholder="https://youtube.com/watch?v=..."
             />
-            <p className="text-sm text-gray-500 mt-1">
-              Supports YouTube URLs, Vimeo, or direct video file URLs
-            </p>
-            
-            {formData.videoUrl && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Video Preview:</p>
-                <div className="bg-gray-100 rounded-lg p-4">
-                  {isYouTubeUrl(formData.videoUrl) ? (
-                    <div className="aspect-video">
-                      <iframe
-                        src={getYouTubeEmbedUrl(formData.videoUrl)}
-                        className="w-full h-full rounded"
-                        frameBorder="0"
-                        allowFullScreen
-                        title="Video preview"
-                      />
-                    </div>
-                  ) : (
-                    <video
-                      src={formData.videoUrl}
-                      className="w-full max-h-48 rounded"
-                      controls
-                      onError={(e) => {
-                        e.target.style.display = 'none'
-                        e.target.nextSibling.style.display = 'block'
-                      }}
-                    />
-                  )}
-                  <div className="hidden text-center py-8 text-gray-500">
-                    <Upload className="h-8 w-8 mx-auto mb-2" />
-                    <p>Unable to load video preview</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Chapter Content (Optional)
+              Content
             </label>
             <textarea
               name="content"
@@ -151,7 +127,7 @@ const ChapterModal = ({ courseId, sectionId, chapter, onClose, onSuccess }) => {
               onChange={handleChange}
               className="textarea"
               rows="6"
-              placeholder="Add any additional text content, notes, or resources for this chapter..."
+              placeholder="Enter chapter content, notes, or additional materials"
             />
           </div>
 
@@ -160,14 +136,23 @@ const ChapterModal = ({ courseId, sectionId, chapter, onClose, onSuccess }) => {
               type="button"
               onClick={onClose}
               className="btn-secondary flex-1"
+              disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn-primary flex-1"
+              className="btn-primary flex-1 flex items-center justify-center"
+              disabled={loading}
             >
-              {chapter ? 'Update Chapter' : 'Add Chapter'}
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {chapter ? 'Update' : 'Create'} Chapter
+                </>
+              )}
             </button>
           </div>
         </form>

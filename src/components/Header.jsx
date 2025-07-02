@@ -1,107 +1,180 @@
-import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { BookOpen, Home, Sparkles, User, LogOut } from 'lucide-react'
+import { BookOpen, User, LogOut, Menu, X, Home, Plus, Settings } from 'lucide-react'
 
 const Header = () => {
-  const location = useLocation()
   const { user, signOut } = useAuth()
-  const isPublicView = location.pathname.startsWith('/public/')
-  const isHomePage = location.pathname === '/'
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const handleSignOut = async () => {
-    await signOut()
+    try {
+      await signOut()
+      setIsMenuOpen(false)
+      navigate('/', { replace: true })
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
   }
 
-  if (isPublicView) {
-    return (
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md shadow-sm border-b border-white/20">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                <BookOpen className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold gradient-text">Course Viewer</h1>
-                <p className="text-xs text-slate-500">Premium Learning Experience</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-    )
-  }
-
-  // Transparent header for home page with proper spacing
-  const headerClass = isHomePage 
-    ? "absolute top-12 left-0 right-0 z-30 bg-transparent" 
-    : "sticky top-0 z-30 bg-white/80 backdrop-blur-md shadow-sm border-b border-white/20"
-
-  const textColor = isHomePage ? "text-white" : "text-slate-900"
-  const logoTextColor = isHomePage ? "text-white" : ""
+  const isActive = (path) => location.pathname === path
 
   return (
-    <header className={headerClass}>
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-white/20 shadow-sm">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to={user ? "/dashboard" : "/"} className="flex items-center space-x-2 group">
+            <div className="p-2 bg-gradient-to-r from-emerald-500 to-green-600 rounded-xl group-hover:scale-110 transition-transform duration-300">
               <BookOpen className="h-6 w-6 text-white" />
             </div>
-            <div>
-              <h1 className={`text-xl font-bold ${logoTextColor || 'gradient-text'}`}>Course Builder</h1>
-              <p className={`text-xs ${isHomePage ? 'text-green-100' : 'text-slate-500'}`}>Create Amazing Courses</p>
-            </div>
+            <span className="text-xl font-bold gradient-text">CourseBuilder</span>
           </Link>
-          
-          <nav className="flex items-center space-x-4">
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
             {user ? (
               <>
-                <Link to="/dashboard" className={`nav-link flex items-center space-x-2 ${textColor} ${isHomePage ? 'hover:bg-white/10' : ''}`}>
+                <Link
+                  to="/dashboard"
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    isActive('/dashboard')
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
+                  }`}
+                >
                   <Home className="h-4 w-4" />
                   <span>Dashboard</span>
                 </Link>
-                <div className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-amber-100 to-orange-100 rounded-full border border-amber-200/60">
-                  <Sparkles className="h-3 w-3 text-amber-600" />
-                  <span className="text-xs font-medium text-amber-700">Pro</span>
+                
+                <div className="flex items-center space-x-2 px-4 py-2 text-slate-600">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
+                  </span>
                 </div>
                 
-                {/* User Menu */}
-                <div className="flex items-center space-x-3">
-                  <div className={`flex items-center space-x-2 px-3 py-2 ${isHomePage ? 'bg-white/10 backdrop-blur-md border-white/20' : 'bg-white/60 backdrop-blur-sm border-slate-200/60'} rounded-lg border`}>
-                    <User className={`h-4 w-4 ${isHomePage ? 'text-white' : 'text-slate-600'}`} />
-                    <span className={`text-sm font-medium ${isHomePage ? 'text-white' : 'text-slate-700'}`}>
-                      {user.user_metadata?.first_name || user.email}
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className={`p-2 ${isHomePage ? 'text-white hover:bg-white/10' : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100/60'} rounded-lg transition-all duration-200`}
-                    title="Sign out"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center space-x-2 px-4 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg font-medium transition-all duration-200"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </button>
               </>
             ) : (
-              <div className="flex items-center space-x-3">
-                <Link 
-                  to="/login" 
-                  className={`${isHomePage ? 'text-white hover:bg-white/10' : ''} btn-ghost`}
+              <>
+                <Link
+                  to="/"
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    isActive('/')
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
+                  }`}
                 >
-                  Sign in
+                  Home
                 </Link>
-                <Link 
-                  to="/signup" 
-                  className={`btn-primary ${isHomePage ? 'bg-white text-green-600 hover:bg-green-50' : ''}`}
+                <Link
+                  to="/login"
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    isActive('/login')
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
+                  }`}
                 >
-                  Get started
+                  Sign In
                 </Link>
-              </div>
+                <Link
+                  to="/signup"
+                  className="btn-primary"
+                >
+                  Get Started
+                </Link>
+              </>
             )}
           </nav>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-2 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all duration-200"
+          >
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden py-4 border-t border-slate-200/60">
+            <nav className="flex flex-col space-y-2">
+              {user ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      isActive('/dashboard')
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
+                    }`}
+                  >
+                    <Home className="h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                  
+                  <div className="flex items-center space-x-2 px-4 py-3 text-slate-600">
+                    <User className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
+                    </span>
+                  </div>
+                  
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center space-x-2 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg font-medium transition-all duration-200 text-left"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      isActive('/')
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
+                    }`}
+                  >
+                    Home
+                  </Link>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      isActive('/login')
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
+                    }`}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="btn-primary mx-4"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   )

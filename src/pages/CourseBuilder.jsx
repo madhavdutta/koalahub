@@ -15,42 +15,79 @@ const CourseBuilder = () => {
   const [editingSection, setEditingSection] = useState(null)
   const [editingChapter, setEditingChapter] = useState(null)
   const [selectedSectionId, setSelectedSectionId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    const courseData = getCourse(id)
-    if (!courseData) {
-      navigate('/')
-      return
-    }
-    setCourse(courseData)
-  }, [id, getCourse, navigate])
+    const loadCourse = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        if (!id) {
+          setError('Course ID is required')
+          return
+        }
 
-  const handleSaveBasicInfo = (updates) => {
-    updateCourse(id, updates)
-    setCourse(prev => ({ ...prev, ...updates }))
+        const courseData = getCourse(id)
+        if (!courseData) {
+          setError('Course not found')
+          return
+        }
+        
+        setCourse(courseData)
+      } catch (err) {
+        console.error('Error loading course:', err)
+        setError('Failed to load course')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCourse()
+  }, [id, getCourse])
+
+  const handleSaveBasicInfo = async (updates) => {
+    try {
+      await updateCourse(id, updates)
+      setCourse(prev => ({ ...prev, ...updates }))
+    } catch (error) {
+      console.error('Error updating course:', error)
+      setError('Failed to update course')
+    }
   }
 
-  const handleDeleteSection = (sectionId) => {
+  const handleDeleteSection = async (sectionId) => {
     if (window.confirm('Are you sure you want to delete this section and all its chapters?')) {
-      deleteSection(id, sectionId)
-      setCourse(prev => ({
-        ...prev,
-        sections: prev.sections.filter(s => s.id !== sectionId)
-      }))
+      try {
+        await deleteSection(id, sectionId)
+        setCourse(prev => ({
+          ...prev,
+          sections: prev.sections.filter(s => s.id !== sectionId)
+        }))
+      } catch (error) {
+        console.error('Error deleting section:', error)
+        setError('Failed to delete section')
+      }
     }
   }
 
-  const handleDeleteChapter = (sectionId, chapterId) => {
+  const handleDeleteChapter = async (sectionId, chapterId) => {
     if (window.confirm('Are you sure you want to delete this chapter?')) {
-      deleteChapter(id, sectionId, chapterId)
-      setCourse(prev => ({
-        ...prev,
-        sections: prev.sections.map(section =>
-          section.id === sectionId
-            ? { ...section, chapters: section.chapters.filter(c => c.id !== chapterId) }
-            : section
-        )
-      }))
+      try {
+        await deleteChapter(id, sectionId, chapterId)
+        setCourse(prev => ({
+          ...prev,
+          sections: prev.sections.map(section =>
+            section.id === sectionId
+              ? { ...section, chapters: section.chapters.filter(c => c.id !== chapterId) }
+              : section
+          )
+        }))
+      } catch (error) {
+        console.error('Error deleting chapter:', error)
+        setError('Failed to delete chapter')
+      }
     }
   }
 
@@ -81,8 +118,70 @@ const CourseBuilder = () => {
     setCourse(updatedCourse)
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4"></div>
+            <p className="text-slate-600 font-medium">Loading course...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center py-12">
+          <div className="text-red-500 mb-4">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold mb-2">Error Loading Course</h2>
+            <p className="text-slate-600 mb-6">{error}</p>
+            <div className="space-x-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="btn-secondary"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="btn-primary"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Course not found
   if (!course) {
-    return <div>Loading...</div>
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center py-12">
+          <div className="text-slate-400 mb-4">
+            <div className="text-6xl mb-4">📚</div>
+            <h2 className="text-2xl font-bold mb-2">Course Not Found</h2>
+            <p className="text-slate-600 mb-6">The course you're looking for doesn't exist or you don't have access to it.</p>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="btn-primary"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -90,7 +189,7 @@ const CourseBuilder = () => {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="btn-secondary mr-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -122,7 +221,7 @@ const CourseBuilder = () => {
           </button>
         </div>
 
-        {course.sections.length === 0 ? (
+        {!course.sections || course.sections.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-gray-400 mb-4">
               <Play className="h-12 w-12 mx-auto" />
@@ -172,7 +271,7 @@ const CourseBuilder = () => {
                   </div>
                 </div>
 
-                {section.chapters.length === 0 ? (
+                {!section.chapters || section.chapters.length === 0 ? (
                   <div className="text-center py-6 bg-gray-50 rounded-lg">
                     <p className="text-gray-500 text-sm mb-2">No chapters in this section</p>
                     <button
@@ -194,9 +293,9 @@ const CourseBuilder = () => {
                             {chapter.description && (
                               <p className="text-gray-600 text-sm mt-1">{chapter.description}</p>
                             )}
-                            {chapter.videoUrl && (
+                            {chapter.video_url && (
                               <p className="text-primary-600 text-sm mt-1">
-                                📹 Video: {chapter.videoUrl}
+                                📹 Video: {chapter.video_url}
                               </p>
                             )}
                           </div>
@@ -250,17 +349,33 @@ const CourseBuilder = () => {
 
 const CourseBasicInfo = ({ course, onSave }) => {
   const [formData, setFormData] = useState({
-    title: course.title,
-    description: course.description,
-    category: course.category,
-    level: course.level
+    title: course?.title || '',
+    description: course?.description || '',
+    category: course?.category || '',
+    level: course?.level || 'beginner'
   })
   const [isEditing, setIsEditing] = useState(false)
 
-  const handleSubmit = (e) => {
+  // Update form data when course changes
+  useEffect(() => {
+    if (course) {
+      setFormData({
+        title: course.title || '',
+        description: course.description || '',
+        category: course.category || '',
+        level: course.level || 'beginner'
+      })
+    }
+  }, [course])
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    onSave(formData)
-    setIsEditing(false)
+    try {
+      await onSave(formData)
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Error saving course info:', error)
+    }
   }
 
   const handleChange = (e) => {
@@ -268,6 +383,16 @@ const CourseBasicInfo = ({ course, onSave }) => {
       ...prev,
       [e.target.name]: e.target.value
     }))
+  }
+
+  if (!course) {
+    return (
+      <div className="animate-pulse">
+        <div className="h-8 bg-gray-200 rounded mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      </div>
+    )
   }
 
   if (!isEditing) {

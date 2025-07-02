@@ -17,6 +17,7 @@ const Dashboard = () => {
       try {
         await deleteCourse(courseId)
       } catch (error) {
+        console.error('Error deleting course:', error)
         alert('Error deleting course: ' + error.message)
       }
     }
@@ -30,25 +31,35 @@ const Dashboard = () => {
         await publishCourse(course.id)
       }
     } catch (error) {
+      console.error('Error updating course:', error)
       alert('Error updating course: ' + error.message)
     }
   }
 
   const getTotalChapters = (course) => {
-    return course.sections?.reduce((total, section) => total + (section.chapters?.length || 0), 0) || 0
+    if (!course || !course.sections) return 0
+    return course.sections.reduce((total, section) => {
+      return total + (section.chapters ? section.chapters.length : 0)
+    }, 0)
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+    if (!dateString) return 'N/A'
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    } catch (error) {
+      return 'N/A'
+    }
   }
 
   const getRandomRating = () => (4.2 + Math.random() * 0.6).toFixed(1)
   const getRandomStudents = () => Math.floor(Math.random() * 1000) + 100
 
+  // Show loading state
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto">
@@ -65,6 +76,20 @@ const Dashboard = () => {
       </div>
     )
   }
+
+  // Ensure we have user and courses array
+  if (!user) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center py-16">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Please log in to access your dashboard</h2>
+        </div>
+      </div>
+    )
+  }
+
+  // Ensure courses is an array
+  const coursesList = Array.isArray(courses) ? courses : []
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -121,7 +146,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Total Courses</p>
-              <p className="text-3xl font-bold text-slate-900">{courses.length}</p>
+              <p className="text-3xl font-bold text-slate-900">{coursesList.length}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl">
               <BookOpen className="h-6 w-6 text-emerald-600" />
@@ -134,7 +159,7 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-slate-600">Published</p>
               <p className="text-3xl font-bold text-slate-900">
-                {courses.filter(course => course.is_published).length}
+                {coursesList.filter(course => course.is_published).length}
               </p>
             </div>
             <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl">
@@ -148,7 +173,7 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-slate-600">Total Sections</p>
               <p className="text-3xl font-bold text-slate-900">
-                {courses.reduce((total, course) => total + (course.sections?.length || 0), 0)}
+                {coursesList.reduce((total, course) => total + (course.sections ? course.sections.length : 0), 0)}
               </p>
             </div>
             <div className="p-3 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-xl">
@@ -162,7 +187,7 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-slate-600">Total Chapters</p>
               <p className="text-3xl font-bold text-slate-900">
-                {courses.reduce((total, course) => total + getTotalChapters(course), 0)}
+                {coursesList.reduce((total, course) => total + getTotalChapters(course), 0)}
               </p>
             </div>
             <div className="p-3 bg-gradient-to-br from-lime-100 to-green-100 rounded-xl">
@@ -187,7 +212,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {courses.length === 0 ? (
+      {coursesList.length === 0 ? (
         <div className="text-center py-16 animate-fade-in-up animate-delay-400">
           <div className="max-w-md mx-auto">
             <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -208,7 +233,7 @@ const Dashboard = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in-up animate-delay-400">
-          {courses.map((course, index) => (
+          {coursesList.map((course, index) => (
             <div key={course.id} className={`group relative overflow-hidden bg-white/90 backdrop-blur-md rounded-3xl shadow-xl hover:shadow-2xl border border-white/40 transition-all duration-500 hover:-translate-y-3 animate-fade-in-up animate-delay-${(index % 3 + 1) * 100}`}>
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-green-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -242,10 +267,10 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-3 line-clamp-2 group-hover:text-emerald-700 transition-colors duration-300">
-                      {course.title}
+                      {course.title || 'Untitled Course'}
                     </h3>
                     <p className="text-slate-600 text-sm line-clamp-3 leading-relaxed">
-                      {course.description}
+                      {course.description || 'No description available'}
                     </p>
                   </div>
                 </div>
@@ -257,7 +282,7 @@ const Dashboard = () => {
                       <BookOpen className="h-4 w-4 text-white" />
                     </div>
                     <p className="text-xs text-slate-500 font-medium">Sections</p>
-                    <p className="font-bold text-slate-900 text-lg">{course.sections?.length || 0}</p>
+                    <p className="font-bold text-slate-900 text-lg">{course.sections ? course.sections.length : 0}</p>
                   </div>
                   <div className="text-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
                     <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg mb-2 mx-auto">
@@ -272,7 +297,7 @@ const Dashboard = () => {
                     </div>
                     <p className="text-xs text-slate-500 font-medium">Price</p>
                     <p className="font-bold text-slate-900 text-lg">
-                      {course.price > 0 ? `$${course.price}` : 'Free'}
+                      {course.price && course.price > 0 ? `$${course.price}` : 'Free'}
                     </p>
                   </div>
                 </div>
@@ -282,13 +307,13 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-600 font-medium">Category:</span>
                     <span className="font-bold text-slate-900 bg-gradient-to-r from-emerald-100 to-green-100 px-2 py-1 rounded-full text-xs">
-                      {course.category}
+                      {course.category || 'General'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-600 font-medium">Level:</span>
                     <span className="font-bold text-slate-900 bg-gradient-to-r from-teal-100 to-cyan-100 px-2 py-1 rounded-full text-xs capitalize">
-                      {course.level}
+                      {course.level || 'beginner'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">

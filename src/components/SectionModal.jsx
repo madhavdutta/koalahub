@@ -1,25 +1,44 @@
-import React, { useState } from 'react'
-import { X } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, Save } from 'lucide-react'
 import { useCourses } from '../context/CourseContext'
 
 const SectionModal = ({ courseId, section, onClose, onSuccess }) => {
   const { addSection, updateSection } = useCourses()
   const [formData, setFormData] = useState({
-    title: section?.title || '',
-    description: section?.description || ''
+    title: '',
+    description: ''
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    
+  useEffect(() => {
     if (section) {
-      updateSection(courseId, section.id, formData)
-    } else {
-      addSection(courseId, formData)
+      setFormData({
+        title: section.title || '',
+        description: section.description || ''
+      })
     }
-    
-    onSuccess()
-    onClose()
+  }, [section])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      if (section) {
+        await updateSection(courseId, section.id, formData)
+      } else {
+        await addSection(courseId, formData)
+      }
+      onSuccess()
+      onClose()
+    } catch (err) {
+      console.error('Error saving section:', err)
+      setError('Failed to save section. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -30,24 +49,30 @@ const SectionModal = ({ courseId, section, onClose, onSuccess }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-semibold text-gray-900">
             {section ? 'Edit Section' : 'Add New Section'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 p-1"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Section Title
+              Section Title *
             </label>
             <input
               type="text"
@@ -62,7 +87,7 @@ const SectionModal = ({ courseId, section, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description (Optional)
+              Description
             </label>
             <textarea
               name="description"
@@ -70,7 +95,7 @@ const SectionModal = ({ courseId, section, onClose, onSuccess }) => {
               onChange={handleChange}
               className="textarea"
               rows="3"
-              placeholder="Describe what this section covers"
+              placeholder="Enter section description (optional)"
             />
           </div>
 
@@ -79,14 +104,23 @@ const SectionModal = ({ courseId, section, onClose, onSuccess }) => {
               type="button"
               onClick={onClose}
               className="btn-secondary flex-1"
+              disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn-primary flex-1"
+              className="btn-primary flex-1 flex items-center justify-center"
+              disabled={loading}
             >
-              {section ? 'Update Section' : 'Add Section'}
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {section ? 'Update' : 'Create'} Section
+                </>
+              )}
             </button>
           </div>
         </form>

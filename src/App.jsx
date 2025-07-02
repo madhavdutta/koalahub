@@ -1,8 +1,9 @@
 import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CourseProvider } from './context/CourseContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import PublicRoute from './components/PublicRoute'
 import Header from './components/Header'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
@@ -17,18 +18,36 @@ function App() {
   return (
     <AuthProvider>
       <CourseProvider>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
           <Header />
           <main>
             <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+              {/* Public routes - redirect to dashboard if already logged in */}
+              <Route path="/" element={
+                <PublicRoute>
+                  <Home />
+                </PublicRoute>
+              } />
+              <Route path="/login" element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              } />
+              <Route path="/signup" element={
+                <PublicRoute>
+                  <Signup />
+                </PublicRoute>
+              } />
+              <Route path="/forgot-password" element={
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
+              } />
+              
+              {/* Public course sharing - always accessible */}
               <Route path="/public/:shareId" element={<PublicCourse />} />
               
-              {/* Protected routes */}
+              {/* Protected routes - only accessible when logged in */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <div className="container mx-auto px-4 py-8">
@@ -50,6 +69,9 @@ function App() {
                   </div>
                 </ProtectedRoute>
               } />
+
+              {/* Catch all route - redirect to appropriate page */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
         </div>
