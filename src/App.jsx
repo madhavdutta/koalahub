@@ -10,6 +10,7 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import CourseBuilder from './pages/CourseBuilder'
 import PublicCourse from './pages/PublicCourse'
+import CourseView from './pages/CourseView'
 
 function App() {
   return (
@@ -38,6 +39,15 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/course/:id/view" 
+                element={
+                  <ProtectedRoute>
+                    <CourseView />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="/share/:shareId" element={<PublicCourse />} />
               <Route path="/course/:shareId" element={<PublicCourse />} />
             </Routes>
           </main>

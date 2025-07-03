@@ -1,30 +1,61 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Play, BookOpen, Clock, User, ChevronRight } from 'lucide-react'
-import { useCourses } from '../context/CourseContext'
+import { supabase } from '../lib/supabase'
 import VideoPlayer from '../components/VideoPlayer'
 
 const PublicCourse = () => {
   const { shareId } = useParams()
-  const { getCourseByShareId } = useCourses()
   const [course, setCourse] = useState(null)
   const [currentChapter, setCurrentChapter] = useState(null)
   const [currentSectionId, setCurrentSectionId] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const courseData = getCourseByShareId(shareId)
-    if (!courseData) {
-      return
+    const fetchCourse = async () => {
+      if (!shareId) return
+      
+      setLoading(true)
+      try {
+        console.log('Fetching course with shareId:', shareId)
+        
+        const { data, error } = await supabase
+          .from('courses')
+          .select(`
+            *,
+            sections (
+              *,
+              chapters (*)
+            )
+          `)
+          .eq('share_id', shareId)
+          .single()
+
+        if (error) {
+          console.error('Error fetching course:', error)
+          setCourse(null)
+          return
+        }
+
+        console.log('Course data:', data)
+        setCourse(data)
+        
+        // Set first chapter as current if available
+        if (data?.sections?.length > 0 && data.sections[0].chapters?.length > 0) {
+          setCurrentChapter(data.sections[0].chapters[0])
+          setCurrentSectionId(data.sections[0].id)
+        }
+      } catch (error) {
+        console.error('Error fetching course:', error)
+        setCourse(null)
+      } finally {
+        setLoading(false)
+      }
     }
-    setCourse(courseData)
-    
-    // Set first chapter as current if available
-    if (courseData.sections.length > 0 && courseData.sections[0].chapters.length > 0) {
-      setCurrentChapter(courseData.sections[0].chapters[0])
-      setCurrentSectionId(courseData.sections[0].id)
-    }
-  }, [shareId, getCourseByShareId])
+
+    fetchCourse()
+  }, [shareId])
 
   const handleChapterSelect = (chapter, sectionId) => {
     setCurrentChapter(chapter)
@@ -33,7 +64,18 @@ const PublicCourse = () => {
   }
 
   const getTotalChapters = () => {
-    return course?.sections.reduce((total, section) => total + section.chapters.length, 0) || 0
+    return course?.sections?.reduce((total, section) => total + (section.chapters?.length || 0), 0) || 0
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading course...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!course) {
@@ -43,6 +85,7 @@ const PublicCourse = () => {
           <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Course Not Found</h2>
           <p className="text-gray-600">The course you're looking for doesn't exist or has been removed.</p>
+          <p className="text-sm text-gray-500 mt-2">Share ID: {shareId}</p>
         </div>
       </div>
     )
@@ -59,7 +102,7 @@ const PublicCourse = () => {
           </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="btn-secondary"
+            className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             <BookOpen className="h-4 w-4" />
           </button>
@@ -80,7 +123,7 @@ const PublicCourse = () => {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center text-gray-600">
                 <BookOpen className="h-4 w-4 mr-2" />
-                {course.sections.length} sections
+                {course.sections?.length || 0} sections
               </div>
               <div className="flex items-center text-gray-600">
                 <Play className="h-4 w-4 mr-2" />
@@ -101,20 +144,20 @@ const PublicCourse = () => {
           <div className="p-6 overflow-y-auto h-full">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Course Content</h3>
             <div className="space-y-4">
-              {course.sections.map((section, sectionIndex) => (
+              {course.sections?.map((section, sectionIndex) => (
                 <div key={section.id}>
                   <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                     <ChevronRight className="h-4 w-4 mr-1" />
                     Section {sectionIndex + 1}: {section.title}
                   </h4>
                   <div className="space-y-1 ml-6">
-                    {section.chapters.map((chapter, chapterIndex) => (
+                    {section.chapters?.map((chapter, chapterIndex) => (
                       <button
                         key={chapter.id}
                         onClick={() => handleChapterSelect(chapter, section.id)}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                           currentChapter?.id === chapter.id
-                            ? 'bg-primary-100 text-primary-700 font-medium'
+                            ? 'bg-blue-100 text-blue-700 font-medium'
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                       >
@@ -144,9 +187,9 @@ const PublicCourse = () => {
           {currentChapter ? (
             <div className="p-6 space-y-6">
               {/* Video Player */}
-              {currentChapter.videoUrl && (
+              {currentChapter.video_url && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <VideoPlayer videoUrl={currentChapter.videoUrl} />
+                  <VideoPlayer videoUrl={currentChapter.video_url} />
                 </div>
               )}
 
@@ -173,10 +216,10 @@ const PublicCourse = () => {
                 <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to {course.title}</h3>
                 <p className="text-gray-600 mb-6">{course.description}</p>
-                {course.sections.length > 0 && course.sections[0].chapters.length > 0 && (
+                {course.sections?.length > 0 && course.sections[0].chapters?.length > 0 && (
                   <button
                     onClick={() => handleChapterSelect(course.sections[0].chapters[0], course.sections[0].id)}
-                    className="btn-primary"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Start Learning
                   </button>

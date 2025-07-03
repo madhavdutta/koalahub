@@ -134,13 +134,34 @@ export const CourseProvider = ({ children }) => {
           )
         `)
         .eq('share_id', shareId)
-        .eq('is_published', true)
         .single()
 
       if (error) throw error
       return data
     } catch (error) {
       console.error('Error fetching course by share ID:', error)
+      return null
+    }
+  }
+
+  const getCourseById = async (courseId) => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          sections (
+            *,
+            chapters (*)
+          )
+        `)
+        .eq('id', courseId)
+        .single()
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Error fetching course by ID:', error)
       return null
     }
   }
@@ -507,6 +528,7 @@ export const CourseProvider = ({ children }) => {
     deleteCourse,
     getCourse,
     getCourseByShareId,
+    getCourseById,
     addSection,
     updateSection,
     deleteSection,
